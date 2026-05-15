@@ -37,6 +37,7 @@ model Note {
   isPublic Boolean @default(false)
   publicShareId String? @unique
   aiSummary String?
+  aiActionItems String?
 
   tag NoteTag[]
 

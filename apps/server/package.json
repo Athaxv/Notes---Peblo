@@ -1,8 +1,14 @@
 {
   "name": "server",
-  "module": "index.ts",
   "type": "module",
   "private": true,
+  "exports": {
+    "./queue": "./src/queue/index.ts"
+  },
+  "scripts": {
+    "worker": "bun run src/worker.ts",
+    "dev:worker": "bun run --watch src/worker.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
@@ -11,6 +17,9 @@
   },
   "dependencies": {
     "bullmq": "^5.76.8",
+    "db": "workspace:*",
+    "dotenv": "^16.5.0",
+    "groq-sdk": "^1.2.0",
     "ioredis": "^5.10.1"
   }
 }

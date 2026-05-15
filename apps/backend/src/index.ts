@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import authRouter from "./routers/auth";
 import notesRouter from "./routers/note";
+import aiRouter from "./routers/ai";
 
 const app = express();
 app.use(express.json());
@@ -14,6 +15,7 @@ app.get("/", (_, res) => {
 
 app.use("/auth", authRouter);
 app.use("/notes", notesRouter);
+app.use("/notes", aiRouter);
 
 app.use(
   (
@@ -30,7 +32,8 @@ app.use(
           ? 401
           : err.message === "Note not found"
             ? 404
-            : err.message === "Title and content are required"
+            : err.message === "Title and content are required" ||
+                err.message === "AI generation already running"
               ? 400
               : 500;
     res.status(status).json({ message: err.message });
