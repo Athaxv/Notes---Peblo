@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/api";
 import type { Note } from "@/lib/types";
+import { copyToClipboard } from "@/lib/utils";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useAiStatus } from "@/hooks/useAiStatus";
 import { Button } from "@/components/ui/Button";
@@ -32,6 +33,8 @@ export function NoteEditor({ noteId }: { noteId: string }) {
   const [archived, setArchived] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [shareCopied, setShareCopied] = useState(false);
+  const [shareError, setShareError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [aiError, setAiError] = useState<string | null>(null);
 
@@ -122,19 +125,32 @@ export function NoteEditor({ noteId }: { noteId: string }) {
   }
 
   async function handleShare() {
-    if (shareUrl) {
-      await navigator.clipboard.writeText(shareUrl);
-      return;
+    setShareCopied(false);
+    setShareError(null);
+    try {
+      let url = shareUrl;
+      if (!url) {
+        const res = await api.notes.enableShare(noteId);
+        url = `${window.location.origin}${res.shareUrl}`;
+        setShareUrl(url);
+      }
+      const copied = await copyToClipboard(url);
+      setShareCopied(copied);
+      if (copied) {
+        window.setTimeout(() => setShareCopied(false), 2000);
+      } else {
+        setShareError("Copy failed — select the link above and copy manually.");
+      }
+    } catch (e) {
+      setShareError(e instanceof Error ? e.message : "Could not share note");
     }
-    const res = await api.notes.enableShare(noteId);
-    const url = `${window.location.origin}${res.shareUrl}`;
-    setShareUrl(url);
-    await navigator.clipboard.writeText(url);
   }
 
   async function revokeShare() {
     await api.notes.disableShare(noteId);
     setShareUrl(null);
+    setShareCopied(false);
+    setShareError(null);
     await load();
   }
 
@@ -156,7 +172,7 @@ export function NoteEditor({ noteId }: { noteId: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="glass-strong flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3">
         <Button variant="ghost" size="sm" onClick={() => router.push("/notes")}>
           <ArrowLeft className="h-4 w-4" />
           Back
@@ -253,13 +269,18 @@ export function NoteEditor({ noteId }: { noteId: string }) {
               <Link2 className="h-4 w-4" />
               Share
             </h2>
+            {shareError && (
+              <p className="mb-2 text-sm text-danger" role="alert">
+                {shareError}
+              </p>
+            )}
             {shareUrl ? (
               <div className="space-y-2">
                 <p className="break-all text-xs text-muted">{shareUrl}</p>
                 <div className="flex gap-2">
                   <Button variant="secondary" size="sm" className="flex-1" onClick={() => void handleShare()}>
                     <Copy className="h-4 w-4" />
-                    Copy link
+                    {shareCopied ? "Copied!" : "Copy link"}
                   </Button>
                   <Button variant="ghost" size="sm" onClick={() => void revokeShare()}>
                     Revoke

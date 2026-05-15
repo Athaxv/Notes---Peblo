@@ -15,7 +15,7 @@ export function Button({
   return (
     <button
       className={cn(
-        "inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-2 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none",
+        "inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-2 rounded-xl font-medium transition-colors disabled:pointer-events-none disabled:opacity-50",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         "motion-safe:transition-colors motion-reduce:transition-none",
         size === "sm" && "px-3 py-2 text-sm",
@@ -24,10 +24,10 @@ export function Button({
         variant === "primary" &&
           "bg-accent text-accent-foreground hover:bg-accent-hover",
         variant === "secondary" &&
-          "bg-muted-bg text-foreground border border-border hover:bg-border/50",
-        variant === "ghost" && "hover:bg-muted-bg text-foreground",
+          "glass text-foreground hover:bg-white/90",
+        variant === "ghost" && "text-foreground hover:bg-black/5",
         variant === "danger" &&
-          "bg-danger/10 text-danger border border-danger/30 hover:bg-danger/20",
+          "border border-danger/30 bg-danger/10 text-danger hover:bg-danger/20",
         className,
       )}
       {...props}

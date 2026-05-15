@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/Card";
 export function NoteCard({ note }: { note: Note }) {
   return (
     <Link href={`/notes/${note.id}`}>
-      <Card className="transition hover:border-accent/40 hover:shadow-md">
+      <Card className="transition hover:border-accent/30 hover:shadow-md">
         <div className="flex items-start justify-between gap-2">
           <h3 className="font-semibold line-clamp-1">
             {note.title || "Untitled"}

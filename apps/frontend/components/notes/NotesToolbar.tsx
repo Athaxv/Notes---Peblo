@@ -31,7 +31,7 @@ export function NotesToolbar({
   creating,
 }: Props) {
   return (
-    <div className="space-y-4">
+    <div className="glass-strong space-y-4 rounded-2xl p-4 sm:p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Notes</h1>

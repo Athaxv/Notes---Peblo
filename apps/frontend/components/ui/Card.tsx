@@ -1,11 +1,17 @@
 import { cn } from "@/lib/utils";
 import type { HTMLAttributes } from "react";
 
-export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+type CardProps = HTMLAttributes<HTMLDivElement> & {
+  variant?: "glass" | "solid";
+};
+
+export function Card({ className, variant = "glass", ...props }: CardProps) {
   return (
     <div
       className={cn(
-        "rounded-2xl border border-border bg-card p-5 shadow-sm",
+        "rounded-2xl p-5",
+        variant === "glass" && "glass",
+        variant === "solid" && "border border-border bg-card shadow-sm",
         className,
       )}
       {...props}

@@ -3,11 +3,15 @@ import { LandingNavbar } from "./LandingNavbar";
 
 export function LandingPage() {
   return (
-    <div className="landing-theme flex min-h-screen flex-col">
-      <LandingNavbar />
-      <main id="main-content" tabIndex={-1}>
+    <div className="landing-theme min-h-screen">
+      <section
+        id="features"
+        className="landing-hero flex min-h-screen flex-col"
+        aria-label="Hero"
+      >
+        <LandingNavbar />
         <LandingHero />
-      </main>
+      </section>
     </div>
   );
 }
