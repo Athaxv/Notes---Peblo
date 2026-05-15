@@ -18,7 +18,7 @@
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
-    "expess": "^0.0.1-security",
+    "express": "^5.1.0",
     "jsonwebtoken": "^9.0.3",
     "zod": "^4.4.3"
   }
