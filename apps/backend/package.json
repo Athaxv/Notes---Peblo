@@ -10,7 +10,8 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "@prisma/client": "^7.8.0",
+    "db": "workspace:*",
+    "dotenv": "^16.5.0",
     "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
@@ -19,7 +20,6 @@
     "cors": "^2.8.6",
     "expess": "^0.0.1-security",
     "jsonwebtoken": "^9.0.3",
-    "prisma": "^7.8.0",
     "zod": "^4.4.3"
   }
 }
