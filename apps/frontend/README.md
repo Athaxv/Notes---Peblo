@@ -11,6 +11,8 @@ bun install
 
 Ensure the backend runs on `http://localhost:5000` with `FRONTEND_URL=http://localhost:3000`.
 
+The frontend proxies `/api/*` → backend (see `next.config.ts`). If port 5000 is in use, stop that process or set `PORT` in `apps/backend/.env` and update `BACKEND_URL` in `.env.local`.
+
 ## Run
 
 ```bash

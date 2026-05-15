@@ -7,23 +7,27 @@ export const TagRepository = {
     ];
     if (normalized.length === 0) return [];
 
-    const tags = await Promise.all(
-      normalized.map((name) =>
-        prisma.tag.upsert({
-          where: { name },
-          create: { name },
-          update: {},
-        }),
-      ),
-    );
-    return tags;
+    // createMany + skipDuplicates avoids upsert races when tags are created in parallel
+    await prisma.tag.createMany({
+      data: normalized.map((name) => ({ name })),
+      skipDuplicates: true,
+    });
+
+    return prisma.tag.findMany({
+      where: { name: { in: normalized } },
+    });
   },
 
   async setNoteTags(noteId: string, tagIds: string[]) {
-    await prisma.noteTag.deleteMany({ where: { noteId } });
-    if (tagIds.length === 0) return;
-    await prisma.noteTag.createMany({
-      data: tagIds.map((tagId) => ({ noteId, tagId })),
+    const uniqueTagIds = [...new Set(tagIds)];
+
+    await prisma.$transaction(async (tx) => {
+      await tx.noteTag.deleteMany({ where: { noteId } });
+      if (uniqueTagIds.length === 0) return;
+      await tx.noteTag.createMany({
+        data: uniqueTagIds.map((tagId) => ({ noteId, tagId })),
+        skipDuplicates: true,
+      });
     });
   },
 

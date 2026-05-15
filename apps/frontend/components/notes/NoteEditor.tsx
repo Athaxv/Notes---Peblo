@@ -106,6 +106,14 @@ export function NoteEditor({ noteId }: { noteId: string }) {
   async function handleGenerateAi() {
     setAiError(null);
     try {
+      // Flush pending auto-save so the worker reads the latest content from the DB
+      const saved = await api.notes.update(noteId, {
+        title,
+        content,
+        tags,
+      });
+      setNote(saved);
+
       await api.notes.generateSummary(noteId);
       startPolling();
     } catch (e) {

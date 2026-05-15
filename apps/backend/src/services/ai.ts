@@ -4,6 +4,8 @@ import { AIError } from "../lib/errors";
 import { NoteRepository } from "../repositories/note";
 import { mapNote } from "../utils/note-mapper";
 
+const jobIdForNote = (noteId: string) => `note-ai-${noteId}`;
+
 export const AIService = {
   async enqueueNoteGeneration(noteId: string, userId: string) {
     const note = await prisma.note.findFirst({
@@ -14,19 +16,34 @@ export const AIService = {
       throw new AIError("Note not found", 404);
     }
 
-    const existingJobs = await aiQueue.getJobs(["waiting", "active"]);
-    const duplicate = existingJobs.find(
-      (job) => (job.data as GenerateNoteAIJobData).noteId === noteId,
-    );
-
-    if (duplicate) {
-      throw new AIError("AI generation already running", 400);
+    if (!note.content.trim()) {
+      throw new AIError("Add some note content before generating a summary", 400);
     }
+
+    const jobId = jobIdForNote(noteId);
+    const existingJob = await aiQueue.getJob(jobId);
+
+    if (existingJob) {
+      const state = await existingJob.getState();
+      if (state === "waiting" || state === "active") {
+        throw new AIError("AI generation already running", 400);
+      }
+      await existingJob.remove();
+    }
+
+    await prisma.note.update({
+      where: { id: noteId },
+      data: {
+        aiSummary: null,
+        aiActionItems: null,
+        aiGeneratedAt: null,
+      },
+    });
 
     await aiQueue.add(
       JobName.GENERATE_NOTE_AI,
       { noteId } satisfies GenerateNoteAIJobData,
-      { jobId: `note-ai-${noteId}` },
+      { jobId },
     );
 
     return { success: true, message: "AI generation started" };
@@ -36,17 +53,18 @@ export const AIService = {
     const note = await NoteRepository.findOneNote(noteId, userId);
     if (!note) throw new AIError("Note not found", 404);
 
-    const jobs = await aiQueue.getJobs(["waiting", "active", "completed", "failed"]);
-    const job = jobs.find(
-      (j) => (j.data as GenerateNoteAIJobData).noteId === noteId,
-    );
+    const job = await aiQueue.getJob(jobIdForNote(noteId));
 
     let status: "idle" | "processing" | "done" | "failed" = "idle";
     if (job) {
       const state = await job.getState();
-      if (state === "waiting" || state === "active") status = "processing";
-      else if (state === "completed") status = note.aiSummary ? "done" : "idle";
-      else if (state === "failed") status = "failed";
+      if (state === "waiting" || state === "active") {
+        status = "processing";
+      } else if (state === "failed") {
+        status = "failed";
+      } else if (state === "completed") {
+        status = note.aiSummary ? "done" : "idle";
+      }
     }
 
     if (note.aiSummary && status !== "processing") {

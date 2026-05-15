@@ -15,8 +15,17 @@ import type {
   User,
 } from "./types";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+/** Browser uses same-origin proxy (/api) to avoid CORS; SSR uses BACKEND_URL. */
+function getApiBase(): string {
+  if (typeof window !== "undefined") {
+    return process.env.NEXT_PUBLIC_API_URL ?? "/api";
+  }
+  return (
+    process.env.BACKEND_URL ??
+    process.env.NEXT_PUBLIC_API_URL ??
+    "http://localhost:5000"
+  );
+}
 
 type FetchOptions = RequestInit & {
   skipAuth?: boolean;
@@ -48,11 +57,19 @@ async function apiFetch<T>(
     if (token) headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const res = await fetch(`${API_URL}${path}`, {
-    ...init,
-    headers,
-    credentials: init.credentials ?? "include",
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${getApiBase()}${path}`, {
+      ...init,
+      headers,
+      credentials: init.credentials ?? "include",
+      cache: "no-store",
+    });
+  } catch {
+    throw new Error(
+      "Cannot reach the API. Start the backend with `bun run dev:api` (default port 5000).",
+    );
+  }
 
   if (res.status === 401 && !skipAuth && !skipRetry) {
     const refreshed = await refreshSession();

@@ -13,6 +13,7 @@ const worker = new Worker<GenerateNoteAIJobData>(
     switch (job.name) {
       case JobName.GENERATE_NOTE_AI: {
         const { noteId } = job.data;
+        console.log(`[AI] Processing note ${noteId} (job ${job.id})`);
 
         const note = await prisma.note.findUnique({
           where: { id: noteId },
@@ -20,6 +21,10 @@ const worker = new Worker<GenerateNoteAIJobData>(
 
         if (!note) {
           throw new Error("Note not found");
+        }
+
+        if (!note.content.trim()) {
+          throw new Error("Note has no content to summarize");
         }
 
         const result = await aiService.execute(note.content);

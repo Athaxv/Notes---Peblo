@@ -2,13 +2,13 @@ import { z } from "zod";
 
 export const createNoteSchema = z.object({
   title: z.string().min(1).max(500),
-  content: z.string().min(1),
+  content: z.string().max(100_000).default(""),
   tags: z.array(z.string().min(1).max(50)).optional(),
 });
 
 export const updateNoteSchema = z.object({
   title: z.string().min(1).max(500).optional(),
-  content: z.string().min(1).optional(),
+  content: z.string().max(100_000).optional(),
   archived: z.boolean().optional(),
   tags: z.array(z.string().min(1).max(50)).optional(),
 });

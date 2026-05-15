@@ -20,6 +20,7 @@ export default function NotesPage() {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   const debouncedSearch = useDebounce(search, 400);
 
@@ -49,12 +50,15 @@ export default function NotesPage() {
 
   async function handleCreate() {
     setCreating(true);
+    setCreateError(null);
     try {
       const note = await api.notes.create({
         title: "Untitled",
         content: "",
       });
       router.push(`/notes/${note.id}`);
+    } catch (e) {
+      setCreateError(e instanceof Error ? e.message : "Could not create note");
     } finally {
       setCreating(false);
     }
@@ -73,6 +77,12 @@ export default function NotesPage() {
         onCreateNote={() => void handleCreate()}
         creating={creating}
       />
+
+      {createError && (
+        <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">
+          {createError}
+        </p>
+      )}
 
       {loading ? (
         <div className="flex justify-center py-16">

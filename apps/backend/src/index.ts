@@ -14,6 +14,13 @@ import { globalErrorHandler } from "./middleware/errorHandler";
 
 const app = express();
 
+// Disable ETag — otherwise repeated GETs (e.g. ai-status polling) return 304 with no body
+app.set("etag", false);
+app.use((_req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  next();
+});
+
 app.use(
   cors({
     origin: env.frontendUrl,
