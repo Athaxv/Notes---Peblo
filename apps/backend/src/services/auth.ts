@@ -1,37 +1,80 @@
-import { UserRepository } from "../repositories/user"
-import { comparePassword, hashPassword } from "../utils/password"
-import { generateRefreshToken, genereateAccessToken } from "../utils/jwt"
+import { env } from "../config/env";
+import { AuthError } from "../lib/errors";
+import { RefreshTokenRepository } from "../repositories/refreshToken.repository";
+import { UserRepository } from "../repositories/user";
+import { comparePassword, hashPassword } from "../utils/password";
+import {
+  generateOpaqueToken,
+  hashToken,
+  refreshExpiresAt,
+} from "../utils/token";
+import { signAccessToken } from "../utils/jwt";
+import type { z } from "zod";
+import type { loginSchema, registerSchema } from "../schemas/auth.schema";
+
+type RegisterInput = z.infer<typeof registerSchema>;
+type LoginInput = z.infer<typeof loginSchema>;
+
+async function issueTokenPair(userId: string) {
+  const accessToken = signAccessToken(userId);
+  const rawRefresh = generateOpaqueToken();
+  const tokenHash = hashToken(rawRefresh);
+  const expiresAt = refreshExpiresAt(env.refreshDays);
+
+  await RefreshTokenRepository.create({ userId, tokenHash, expiresAt });
+
+  return {
+    accessToken,
+    refreshToken: rawRefresh,
+    refreshMaxAgeMs: env.refreshDays * 24 * 60 * 60 * 1000,
+  };
+}
 
 export const AuthService = {
-    async register(body: { email: string, password: string }) {
-        const existing = await UserRepository.findByEmail(body.email)
+  async register(body: RegisterInput) {
+    const existing = await UserRepository.findByEmail(body.email);
+    if (existing) throw new AuthError("User already exists", 409);
 
-        if (existing) {
-            throw new Error("User already exists")
-        }
+    const password = await hashPassword(body.password);
+    const user = await UserRepository.create({
+      email: body.email,
+      password,
+      name: body.name,
+    });
 
-        const hashed = await hashPassword(body.password)
+    const tokens = await issueTokenPair(user.id);
+    return { user, ...tokens };
+  },
 
-        const user = await UserRepository.create(body.email, hashed)
+  async login(body: LoginInput) {
+    const existing = await UserRepository.findByEmail(body.email);
+    if (!existing) throw new AuthError("Invalid credentials", 401);
 
-        return user;
-    },
-    async login(body: { email: string, password: string }){
-        const existing = await UserRepository.findByEmail(body.email)
+    const valid = await comparePassword(body.password, existing.password);
+    if (!valid) throw new AuthError("Invalid credentials", 401);
 
-        if (!existing) throw new Error("No user exists with this email")
+    const tokens = await issueTokenPair(existing.id);
+    const user = await UserRepository.findById(existing.id);
+    return { user, ...tokens };
+  },
 
-        const valid = await comparePassword(body.password, existing.password);
-        if (!valid) {
-            throw new Error("Invalid Credentials");
-        }
+  async refresh(rawRefreshToken: string | undefined) {
+    if (!rawRefreshToken) throw new AuthError("Missing refresh token", 401);
 
-        const access_token = genereateAccessToken(existing.id)
-        const refresh_token = generateRefreshToken(existing.id)
+    const tokenHash = hashToken(rawRefreshToken);
+    const stored = await RefreshTokenRepository.findValidByHash(tokenHash);
+    if (!stored) throw new AuthError("Invalid refresh token", 401);
 
-        return {
-            "access_token": access_token,
-            "refresh_token": refresh_token
-        }
-    }
-}
+    await RefreshTokenRepository.revokeById(stored.id);
+    const tokens = await issueTokenPair(stored.userId);
+    const user = await UserRepository.findById(stored.userId);
+    return { user, ...tokens };
+  },
+
+  async logout(rawRefreshToken: string | undefined) {
+    if (!rawRefreshToken) return;
+    const tokenHash = hashToken(rawRefreshToken);
+    const stored = await RefreshTokenRepository.findValidByHash(tokenHash);
+    if (stored) await RefreshTokenRepository.revokeById(stored.id);
+  },
+};

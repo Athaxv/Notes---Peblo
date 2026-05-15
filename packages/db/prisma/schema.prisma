@@ -1,8 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -13,11 +11,12 @@ datasource db {
 }
 
 model User {
-  id String @id @default(uuid())
-  email String @unique
-  password String 
+  id       String   @id @default(uuid())
+  name     String?
+  email    String   @unique
+  password String
 
-  notes Note[]
+  notes         Note[]
   refreshTokens RefreshToken[]
 
   createdAt DateTime @default(now())
@@ -27,17 +26,18 @@ model User {
 model Note {
   id String @id @default(uuid())
 
-  title String 
+  title   String
   content String
 
   userId String
-  user User @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
 
-  archived Boolean
-  isPublic Boolean @default(false)
-  publicShareId String? @unique
-  aiSummary String?
+  archived      Boolean
+  isPublic      Boolean   @default(false)
+  publicShareId String?   @unique
+  aiSummary     String?
   aiActionItems String?
+  aiGeneratedAt DateTime?
 
   tag NoteTag[]
 
@@ -49,8 +49,7 @@ model Note {
 }
 
 model Tag {
-  id String @id @default(uuid())
-
+  id   String @id @default(uuid())
   name String @unique
 
   notes NoteTag[]
@@ -58,21 +57,22 @@ model Tag {
 
 model NoteTag {
   noteId String
-  tagId String
+  tagId  String
 
-  note Note @relation(fields: [noteId], references: [id])
-  tag Tag @relation(fields: [tagId], references: [id])
+  note Note @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id])
 
   @@id([noteId, tagId])
 }
 
 model RefreshToken {
-  id String @id @default(uuid())
+  id        String    @id @default(uuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
 
-  token String
-
-  userId String
-  user User @relation(fields: [userId], references: [id])
-
-  createdAt DateTime @default(now()) 
+  @@index([userId])
 }

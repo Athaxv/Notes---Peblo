@@ -1,0 +1,47 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { api } from "@/lib/api";
+import type { AiStatusResponse } from "@/lib/types";
+
+export function useAiStatus(noteId: string, enabled = true) {
+  const [data, setData] = useState<AiStatusResponse | null>(null);
+  const [polling, setPolling] = useState(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const fetchStatus = useCallback(async () => {
+    const result = await api.notes.aiStatus(noteId);
+    setData(result);
+    return result;
+  }, [noteId]);
+
+  const startPolling = useCallback(() => {
+    setPolling(true);
+    void fetchStatus();
+  }, [fetchStatus]);
+
+  useEffect(() => {
+    if (!enabled || !noteId) return;
+    void fetchStatus();
+  }, [enabled, noteId, fetchStatus]);
+
+  useEffect(() => {
+    if (!polling) {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      return;
+    }
+
+    intervalRef.current = setInterval(async () => {
+      const result = await fetchStatus();
+      if (result.status !== "processing") {
+        setPolling(false);
+      }
+    }, 2000);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [polling, fetchStatus]);
+
+  return { data, polling, startPolling, fetchStatus, status: data?.status ?? "idle" };
+}

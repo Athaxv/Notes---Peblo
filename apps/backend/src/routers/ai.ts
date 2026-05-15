@@ -6,7 +6,9 @@ const router = Router();
 
 router.use(authMiddleware);
 
+router.post("/:id/generate-summary", AIController.generate);
 router.post("/:id/ai", AIController.generate);
+router.get("/:id/ai-status", AIController.status);
 
 router.use(aiErrorHandler);
 

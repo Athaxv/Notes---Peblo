@@ -4,6 +4,7 @@
   "scripts": {
     "dev:api": "bun run --cwd apps/backend src/index.ts",
     "dev:worker": "bun run --cwd apps/server worker",
+    "dev:web": "bun run --cwd apps/frontend dev",
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",

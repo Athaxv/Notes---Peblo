@@ -1,9 +1,15 @@
 import { Router } from "express";
-import { authController } from "../controllers/auth";
+import { authController, authErrorHandler } from "../controllers/auth";
+import { validateBody } from "../middleware/validate";
+import { loginSchema, registerSchema } from "../schemas/auth.schema";
 
-const router = Router()
+const router = Router();
 
-router.post('/register', authController.register)
-router.post('/login', authController.login)
+router.post("/register", validateBody(registerSchema), authController.register);
+router.post("/login", validateBody(loginSchema), authController.login);
+router.post("/refresh", authController.refresh);
+router.post("/logout", authController.logout);
+
+router.use(authErrorHandler);
 
 export default router;

@@ -1,22 +1,23 @@
 import jwt from "jsonwebtoken";
+import { env } from "../config/env";
 
-function getJwtSecret(): string {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    throw new Error("JWT_SECRET is not set");
-  }
-  return secret;
-}
+type AccessPayload = { userId: string };
 
-export const genereateAccessToken = (userId: string) => {
-  return jwt.sign({ userId }, getJwtSecret(), {
+export function signAccessToken(userId: string): string {
+  return jwt.sign({ userId } satisfies AccessPayload, env.jwtSecret, {
     expiresIn: "15m",
   });
-};
+}
 
-export const generateRefreshToken = (userId: string) => {
-    return jwt.sign({ userId }, process.env.JWT_REFRESH_SECRET!, {
-      expiresIn: "7d",
-    });
-};
-
+export function verifyAccessToken(token: string): AccessPayload {
+  const payload = jwt.verify(token, env.jwtSecret);
+  if (
+    typeof payload !== "object" ||
+    payload === null ||
+    !("userId" in payload) ||
+    typeof payload.userId !== "string"
+  ) {
+    throw new Error("Invalid token payload");
+  }
+  return { userId: payload.userId };
+}

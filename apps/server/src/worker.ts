@@ -30,6 +30,7 @@ const worker = new Worker<GenerateNoteAIJobData>(
             aiSummary: result.summary,
             aiActionItems: JSON.stringify(result.action_items),
             title: note.title || result.suggested_title,
+            aiGeneratedAt: new Date(),
           },
         });
 

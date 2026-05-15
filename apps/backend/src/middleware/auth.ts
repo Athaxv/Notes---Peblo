@@ -1,9 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import jwt from "jsonwebtoken";
-
-type AccessTokenPayload = {
-  userId: string;
-};
+import { verifyAccessToken } from "../utils/jwt";
 
 export const authMiddleware = (
   req: Request,
@@ -21,16 +17,8 @@ export const authMiddleware = (
   }
 
   try {
-    const payload = jwt.verify(
-      token,
-      process.env.JWT_SECRET!,
-    ) as AccessTokenPayload;
-
-    if (!payload.userId) {
-      return res.status(401).json({ message: "Invalid token" });
-    }
-
-    req.userId = payload.userId;
+    const { userId } = verifyAccessToken(token);
+    req.userId = userId;
     next();
   } catch {
     return res.status(401).json({ message: "Invalid token" });
