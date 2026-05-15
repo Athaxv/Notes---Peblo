@@ -78,7 +78,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             className="absolute inset-0 bg-black/40"
             onClick={() => setMobileOpen(false)}
           />
-          <div className="absolute left-0 top-0 h-full w-64 bg-card">{sidebar}</div>
+          <div id="mobile-sidebar" className="absolute left-0 top-0 h-full w-64 bg-card">
+            {sidebar}
+          </div>
         </div>
       )}
 
@@ -87,13 +89,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <button
             type="button"
             onClick={() => setMobileOpen((o) => !o)}
-            className="rounded-lg p-2 hover:bg-muted-bg"
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-sidebar"
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            className="min-h-11 min-w-11 cursor-pointer rounded-lg p-2 hover:bg-muted-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {mobileOpen ? <X className="h-5 w-5" aria-hidden /> : <Menu className="h-5 w-5" aria-hidden />}
           </button>
           <span className="font-semibold">Peblo</span>
         </header>
-        <main className="flex-1 overflow-auto p-4 md:p-8">
+        <main id="main-content" className="flex-1 overflow-auto p-4 md:p-8" tabIndex={-1}>
           <div className="mx-auto max-w-6xl">{children}</div>
         </main>
       </div>

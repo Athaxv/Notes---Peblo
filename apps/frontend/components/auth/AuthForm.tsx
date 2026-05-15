@@ -16,10 +16,14 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (mode === "login") {
-      await login(email, password);
-    } else {
-      await register(email, password, name || undefined);
+    try {
+      if (mode === "login") {
+        await login(email, password);
+      } else {
+        await register(email, password, name || undefined);
+      }
+    } catch {
+      /* error shown via useAuth */
     }
   }
 
@@ -27,7 +31,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     <div className="flex min-h-screen items-center justify-center app-gradient p-4">
       <Card className="w-full max-w-md">
         <div className="mb-8 flex items-center justify-center gap-2">
-          <Sparkles className="h-8 w-8 text-accent" />
+          <Sparkles className="h-8 w-8 text-accent" aria-hidden />
           <span className="text-2xl font-bold">Peblo</span>
         </div>
 
@@ -35,11 +39,16 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           {mode === "login" ? "Welcome back" : "Create your account"}
         </h1>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           {mode === "register" && (
             <div>
-              <label className="mb-1.5 block text-sm text-muted">Name</label>
+              <label htmlFor="auth-name" className="mb-1.5 block text-sm text-muted">
+                Name
+              </label>
               <Input
+                id="auth-name"
+                name="name"
+                autoComplete="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="John Doe"
@@ -47,21 +56,31 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
             </div>
           )}
           <div>
-            <label className="mb-1.5 block text-sm text-muted">Email</label>
+            <label htmlFor="auth-email" className="mb-1.5 block text-sm text-muted">
+              Email
+            </label>
             <Input
+              id="auth-email"
+              name="email"
               type="email"
               required
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm text-muted">Password</label>
+            <label htmlFor="auth-password" className="mb-1.5 block text-sm text-muted">
+              Password
+            </label>
             <Input
+              id="auth-password"
+              name="password"
               type="password"
               required
               minLength={8}
+              autoComplete={mode === "login" ? "current-password" : "new-password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
@@ -69,7 +88,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           </div>
 
           {error && (
-            <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">
+            <p role="alert" className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">
               {error}
             </p>
           )}

@@ -30,7 +30,9 @@ export function TagInput({
 
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-muted">Tags</label>
+      <label htmlFor="tag-input" className="text-sm font-medium text-muted">
+        Tags
+      </label>
       <div className="flex flex-wrap gap-2">
         {tags.map((tag) => (
           <Badge
@@ -40,21 +42,27 @@ export function TagInput({
             {tag}
             <button
               type="button"
+              aria-label={`Remove tag ${tag}`}
               onClick={() => onChange(tags.filter((t) => t !== tag))}
-              className="rounded-full p-0.5 hover:bg-border"
+              className="min-h-6 min-w-6 cursor-pointer rounded-full p-0.5 hover:bg-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
-              <X className="h-3 w-3" />
+              <X className="h-3 w-3" aria-hidden />
             </button>
           </Badge>
         ))}
       </div>
       <Input
+        id="tag-input"
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={onKeyDown}
         onBlur={() => input && addTag(input)}
         placeholder="Add tag and press Enter"
+        aria-describedby="tag-input-hint"
       />
+      <p id="tag-input-hint" className="text-xs text-muted">
+        Press Enter or comma to add a tag
+      </p>
     </div>
   );
 }

@@ -161,7 +161,7 @@ export function NoteEditor({ noteId }: { noteId: string }) {
           <ArrowLeft className="h-4 w-4" />
           Back
         </Button>
-        <span className="text-sm text-muted">
+        <span className="text-sm text-muted" aria-live="polite" aria-atomic="true">
           {saveState === "saving" && "Saving…"}
           {saveState === "saved" && "Saved"}
           {saveState === "error" && "Save failed"}
@@ -223,7 +223,12 @@ export function NoteEditor({ noteId }: { noteId: string }) {
             {aiError && (
               <p className="mt-2 text-sm text-danger">{aiError}</p>
             )}
-            {displayNote.aiSummary && (
+            {(polling || status === "processing") && !displayNote.aiSummary && (
+              <p className="mt-4 text-sm text-muted">Generating summary from your note…</p>
+            )}
+            {displayNote.aiSummary &&
+              status !== "processing" &&
+              !polling && (
               <div className="mt-4 space-y-3 text-sm">
                 <div>
                   <p className="font-medium text-muted">Summary</p>

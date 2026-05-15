@@ -49,10 +49,63 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
+  line-height: 1.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  z-index: 1000;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--accent);
+  color: var(--accent-foreground);
+  font-weight: 500;
+}
+
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
 }
 
 .app-gradient {
   background:
     radial-gradient(ellipse 80% 50% at 50% -20%, color-mix(in srgb, var(--accent) 15%, transparent), transparent),
     var(--background);
+}
+
+/* Landing page (scoped — does not affect app shell) */
+.landing-theme {
+  --landing-primary: #e85d2a;
+  --landing-primary-hover: #d14f1f;
+  --landing-badge-bg: #fff4ed;
+  --landing-badge-text: #c2410c;
+  --landing-muted: #6b7280;
+  --landing-foreground: #1f2937;
+  --font-display: var(--font-instrument-serif), ui-serif, Georgia, serif;
+  --font-landing-sans: var(--font-inter), system-ui, sans-serif;
+
+  background: #ffffff;
+  color: var(--landing-foreground);
+  font-family: var(--font-landing-sans);
+}
+
+.landing-theme .font-display {
+  font-family: var(--font-display);
+}
+
+.landing-theme .skip-link:focus {
+  background: var(--landing-primary);
+  color: #ffffff;
 }

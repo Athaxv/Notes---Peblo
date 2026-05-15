@@ -15,10 +15,12 @@ export function Button({
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none",
-        size === "sm" && "px-3 py-1.5 text-sm",
-        size === "md" && "px-4 py-2 text-sm",
-        size === "lg" && "px-5 py-2.5",
+        "inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-2 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        "motion-safe:transition-colors motion-reduce:transition-none",
+        size === "sm" && "px-3 py-2 text-sm",
+        size === "md" && "px-4 py-2.5 text-sm",
+        size === "lg" && "px-5 py-3",
         variant === "primary" &&
           "bg-accent text-accent-foreground hover:bg-accent-hover",
         variant === "secondary" &&
