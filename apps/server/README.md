@@ -1,45 +1,47 @@
 # server
 
-Queue configuration and AI worker for the peblo monorepo.
+Queue configuration, Groq AI service, and optional BullMQ worker for the peblo monorepo.
 
 ## Architecture
 
-- **`server/queue`** — BullMQ queue (`aiQueue`), job names, Redis connection. Imported by `apps/backend` to enqueue jobs.
-- **`src/worker.ts`** — Separate process that consumes jobs, calls Groq, and updates notes via the `db` package.
+- **`server/ai`** — `GenerateNoteAIService` (Groq). Used by the API in **sync mode** (`USE_AI_WORKER=false`).
+- **`server/queue`** — BullMQ queue (`aiQueue`), Redis connection. Used only when `USE_AI_WORKER=true`.
+- **`src/worker.ts`** — Background process that consumes jobs (optional).
 
-## Prerequisites
+## Default: sync AI in the API
 
-- Redis running locally:
-
-```bash
-docker run -p 6379:6379 redis
-```
-
-- `DATABASE_URL` and `GROQ_API_KEY` in `apps/server/.env`
-- Same `REDIS_HOST` / `REDIS_PORT` in `apps/backend/.env`
-
-## Run locally (two terminals)
-
-**Terminal 1 — API**
+The backend calls `server/ai` directly on `POST /notes/:id/generate-summary`. You do **not** need Redis or this worker for production deploy.
 
 ```bash
-bun run dev:api
-# from repo root, or: cd apps/backend && bun run src/index.ts
+# apps/backend/.env
+USE_AI_WORKER=false
+GROQ_API_KEY=...
 ```
 
-**Terminal 2 — AI worker**
+## Optional: background worker mode
+
+**Prerequisites**
+
+- Redis: `docker run -p 6379:6379 redis`
+- `USE_AI_WORKER=true` in `apps/backend/.env`
+- `REDIS_HOST` / `REDIS_PORT` in backend `.env`
+- `DATABASE_URL` and `GROQ_API_KEY` in `apps/server/.env` (worker) and backend `.env`
+
+**Run**
 
 ```bash
-bun run dev:worker
-# from repo root, or: cd apps/server && bun run worker
+bun run dev:api    # terminal 1
+bun run dev:worker # terminal 2
 ```
 
-## Enqueue AI job
+## Enqueue AI job (worker mode only)
 
 ```http
-POST http://localhost:5000/notes/:noteId/ai
+POST http://localhost:5000/notes/:noteId/generate-summary
 Authorization: Bearer <access_token>
 ```
+
+Poll with `GET /notes/:noteId/ai-status` until `status` is `done`.
 
 ## Install
 

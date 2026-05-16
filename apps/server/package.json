@@ -3,7 +3,8 @@
   "type": "module",
   "private": true,
   "exports": {
-    "./queue": "./src/queue/index.ts"
+    "./queue": "./src/queue/index.ts",
+    "./ai": "./src/ai/generate-notes.ts"
   },
   "scripts": {
     "worker": "bun run src/worker.ts",
