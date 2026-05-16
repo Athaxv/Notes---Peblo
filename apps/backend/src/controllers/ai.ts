@@ -9,7 +9,7 @@ export const AIController = {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      const result = await AIService.enqueueNoteGeneration(
+      const result = await AIService.generate(
         req.params.id as string,
         req.userId,
       );

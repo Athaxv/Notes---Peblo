@@ -11,7 +11,7 @@ type NoteWithTags = {
   aiGeneratedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
-  tag: { tag: { id: string; name: string } }[];
+  tag?: { tag: { id: string; name: string } }[];
 };
 
 export function mapNote(note: NoteWithTags) {
@@ -28,7 +28,7 @@ export function mapNote(note: NoteWithTags) {
       ? (JSON.parse(note.aiActionItems) as string[])
       : null,
     aiGeneratedAt: note.aiGeneratedAt,
-    tags: note.tag.map((t) => t.tag.name),
+    tags: (note.tag ?? []).map((t) => t.tag.name),
     updated_at: note.updatedAt,
     createdAt: note.createdAt,
     updatedAt: note.updatedAt,
