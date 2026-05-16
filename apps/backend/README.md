@@ -1,20 +1,57 @@
 # Peblo Backend API
 
-Express API for auth, notes, tags, sharing, insights, and AI job enqueueing.
+Express API for auth, notes, tags, sharing, insights, and AI summaries.
 
-## Run
+## Run (sync AI — default, no Redis/worker)
 
 ```bash
-# From repo root (requires Redis + DATABASE_URL in .env)
+# From repo root
 bun run dev:api
+```
 
-# AI worker (separate terminal)
-bun run dev:worker
+Set in `apps/backend/.env`:
+
+```env
+DATABASE_URL=...
+JWT_SECRET=...
+GROQ_API_KEY=...
+FRONTEND_URL=http://localhost:3000
+USE_AI_WORKER=false
+```
+
+## Run (optional background worker)
+
+```bash
+USE_AI_WORKER=true
+REDIS_HOST=localhost
+REDIS_PORT=6379
+```
+
+```bash
+docker run -p 6379:6379 redis
+bun run dev:api    # terminal 1
+bun run dev:worker # terminal 2
 ```
 
 ## Environment
 
-See `.env` — required: `DATABASE_URL`, `JWT_SECRET`, `REDIS_HOST`, `REDIS_PORT`.
+| Variable | Required | Notes |
+|----------|----------|--------|
+| `DATABASE_URL` | Yes | Neon / Postgres |
+| `JWT_SECRET` | Yes | |
+| `GROQ_API_KEY` | Yes (sync mode) | Groq API key |
+| `FRONTEND_URL` | No | CORS origin |
+| `USE_AI_WORKER` | No | `true` = BullMQ + Redis; default sync |
+| `REDIS_HOST` / `REDIS_PORT` | Worker only | When `USE_AI_WORKER=true` |
+
+## Deploy on Render (API only)
+
+```env
+USE_AI_WORKER=false
+GROQ_API_KEY=...
+```
+
+No Redis or background worker service required for AI.
 
 ## API Overview
 
@@ -27,7 +64,7 @@ See `.env` — required: `DATABASE_URL`, `JWT_SECRET`, `REDIS_HOST`, `REDIS_PORT
 | GET | `/notes?q&tag&archived&sort&order` | Bearer |
 | POST | `/notes` | Bearer |
 | GET/PATCH/DELETE | `/notes/:id` | Bearer |
-| POST | `/notes/:id/generate-summary` | Bearer |
+| POST | `/notes/:id/generate-summary` | Bearer — returns `{ status, note }` |
 | GET | `/notes/:id/ai-status` | Bearer |
 | POST/DELETE | `/notes/:id/share` | Bearer |
 | GET | `/shared/:shareId` | No |

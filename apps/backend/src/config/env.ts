@@ -11,4 +11,6 @@ export const env = {
   frontendUrl: process.env.FRONTEND_URL ?? "http://localhost:3000",
   refreshDays: Number(process.env.JWT_REFRESH_DAYS ?? 7),
   isProd: process.env.NODE_ENV === "production",
+  useAiWorker: process.env.USE_AI_WORKER === "true",
+  groqApiKey: process.env.GROQ_API_KEY,
 };
