@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { createServer } from "node:http";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -44,6 +45,26 @@ app.use("/insights", insightsRouter);
 
 app.use(globalErrorHandler);
 
-app.listen(env.port, () => {
+/** `app.listen` alone can exit immediately on Bun/Windows; `createServer` keeps the process alive. */
+const server = createServer(app);
+
+server.listen(env.port, () => {
   console.log(`Server listening on http://localhost:${env.port}`);
+  console.log(
+    `AI: ${env.useAiWorker ? "worker queue (USE_AI_WORKER=true)" : "sync in-request (default)"}`,
+  );
+});
+
+server.on("error", (err) => {
+  console.error("Server error:", err);
+  process.exit(1);
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled rejection:", reason);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught exception:", err);
+  process.exit(1);
 });
