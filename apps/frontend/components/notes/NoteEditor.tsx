@@ -35,24 +35,24 @@ export function NoteEditor({ noteId }: { noteId: string }) {
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
   const [shareError, setShareError] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
 
   const debouncedTitle = useDebounce(title, 600);
   const debouncedContent = useDebounce(content, 600);
   const debouncedTags = useDebounce(tags, 600);
 
-  const { data: aiData, polling, startPolling, status } = useAiStatus(
-    noteId,
-    Boolean(note),
-  );
+  const { data: aiStatus, polling, applyResult, startPolling, status } =
+    useAiStatus(noteId);
 
   const load = useCallback(async () => {
     const n = await api.notes.get(noteId);
     setNote(n);
     setTitle(n.title);
     setContent(n.content);
-    setTags(n.tags);
+    setTags(n.tags ?? []);
     setArchived(n.archived);
     if (n.isPublic && n.publicShareId) {
       setShareUrl(`${window.location.origin}/shared/${n.publicShareId}`);
@@ -70,7 +70,7 @@ export function NoteEditor({ noteId }: { noteId: string }) {
     if (
       debouncedTitle === note.title &&
       debouncedContent === note.content &&
-      JSON.stringify(debouncedTags) === JSON.stringify(note.tags)
+      JSON.stringify(debouncedTags) === JSON.stringify(note.tags ?? [])
     ) {
       return;
     }
@@ -89,15 +89,19 @@ export function NoteEditor({ noteId }: { noteId: string }) {
       .catch(() => setSaveState("error"));
   }, [debouncedTitle, debouncedContent, debouncedTags, noteId, note, loading]);
 
+  /** Worker mode: apply polled note when job finishes. */
   useEffect(() => {
-    if (aiData?.note) {
-      setNote(aiData.note);
-      setTitle(aiData.note.title);
-      if (aiData.note.aiSummary) {
-        /* content unchanged */
-      }
-    }
-  }, [aiData]);
+    if (!polling || aiStatus?.status === "processing" || !aiStatus?.note) return;
+    setNote(aiStatus.note);
+    setTitle(aiStatus.note.title);
+    setTags(aiStatus.note.tags ?? []);
+  }, [polling, aiStatus]);
+
+  function applyNoteFromApi(updated: Note) {
+    setNote(updated);
+    if (updated.title) setTitle(updated.title);
+    setTags(updated.tags ?? []);
+  }
 
   async function toggleArchive() {
     const next = !archived;
@@ -108,25 +112,33 @@ export function NoteEditor({ noteId }: { noteId: string }) {
 
   async function handleGenerateAi() {
     setAiError(null);
+    setGenerating(true);
     try {
-      // Flush pending auto-save so the worker reads the latest content from the DB
-      const saved = await api.notes.update(noteId, {
-        title,
+      await api.notes.update(noteId, {
         content,
         tags,
+        ...(title.trim() ? { title: title.trim() } : {}),
       });
-      setNote(saved);
 
-      await api.notes.generateSummary(noteId);
-      startPolling();
+      const result = await api.notes.generateSummary(noteId);
+      applyResult(result);
+      applyNoteFromApi(result.note);
+
+      if (result.status === "processing") {
+        startPolling();
+      }
     } catch (e) {
       setAiError(e instanceof Error ? e.message : "AI failed");
+    } finally {
+      setGenerating(false);
     }
   }
 
   async function handleShare() {
     setShareCopied(false);
     setShareError(null);
+    const enabling = !shareUrl;
+    if (enabling) setSharing(true);
     try {
       let url = shareUrl;
       if (!url) {
@@ -143,6 +155,8 @@ export function NoteEditor({ noteId }: { noteId: string }) {
       }
     } catch (e) {
       setShareError(e instanceof Error ? e.message : "Could not share note");
+    } finally {
+      if (enabling) setSharing(false);
     }
   }
 
@@ -168,7 +182,8 @@ export function NoteEditor({ noteId }: { noteId: string }) {
     );
   }
 
-  const displayNote = aiData?.note ?? note;
+  const showAiPanel =
+    Boolean(note.aiSummary) && !generating && !polling && status !== "processing";
 
   return (
     <div className="space-y-6">
@@ -225,9 +240,9 @@ export function NoteEditor({ noteId }: { noteId: string }) {
             <Button
               className="w-full"
               onClick={() => void handleGenerateAi()}
-              disabled={polling || status === "processing"}
+              disabled={generating || polling || status === "processing"}
             >
-              {polling || status === "processing" ? (
+              {generating || polling || status === "processing" ? (
                 <>
                   <Spinner />
                   Processing…
@@ -239,22 +254,21 @@ export function NoteEditor({ noteId }: { noteId: string }) {
             {aiError && (
               <p className="mt-2 text-sm text-danger">{aiError}</p>
             )}
-            {(polling || status === "processing") && !displayNote.aiSummary && (
+            {(generating || polling || status === "processing") &&
+              !note.aiSummary && (
               <p className="mt-4 text-sm text-muted">Generating summary from your note…</p>
             )}
-            {displayNote.aiSummary &&
-              status !== "processing" &&
-              !polling && (
+            {showAiPanel && (
               <div className="mt-4 space-y-3 text-sm">
                 <div>
                   <p className="font-medium text-muted">Summary</p>
-                  <p className="mt-1">{displayNote.aiSummary}</p>
+                  <p className="mt-1">{note.aiSummary}</p>
                 </div>
-                {displayNote.aiActionItems && displayNote.aiActionItems.length > 0 && (
+                {note.aiActionItems && note.aiActionItems.length > 0 && (
                   <div>
                     <p className="font-medium text-muted">Action items</p>
                     <ul className="mt-1 list-inside list-disc space-y-1">
-                      {displayNote.aiActionItems.map((item) => (
+                      {note.aiActionItems.map((item) => (
                         <li key={item}>{item}</li>
                       ))}
                     </ul>
@@ -288,8 +302,20 @@ export function NoteEditor({ noteId }: { noteId: string }) {
                 </div>
               </div>
             ) : (
-              <Button variant="secondary" className="w-full" onClick={() => void handleShare()}>
-                Enable public link
+              <Button
+                variant="secondary"
+                className="w-full"
+                disabled={sharing}
+                onClick={() => void handleShare()}
+              >
+                {sharing ? (
+                  <>
+                    <Spinner />
+                    Enabling…
+                  </>
+                ) : (
+                  "Enable public link"
+                )}
               </Button>
             )}
           </Card>

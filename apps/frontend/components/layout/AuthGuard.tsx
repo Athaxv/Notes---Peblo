@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import {
+  clearSession,
   getAccessToken,
   getStoredUser,
   setSession,
@@ -11,7 +11,6 @@ import {
 import { Spinner } from "@/components/ui/Spinner";
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -27,12 +26,13 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         setSession(res.accessToken, res.user ?? getStoredUser());
         setReady(true);
       } catch {
-        router.replace("/login");
+        clearSession();
+        window.location.replace("/login");
       }
     }
 
     void bootstrap();
-  }, [router]);
+  }, []);
 
   if (!ready) {
     return (

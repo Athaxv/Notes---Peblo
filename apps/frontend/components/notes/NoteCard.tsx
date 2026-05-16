@@ -24,10 +24,15 @@ export function NoteCard({ note }: { note: Note }) {
         </div>
         <p className="mt-2 line-clamp-2 text-sm text-muted">{note.content}</p>
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          {note.tags.map((tag) => (
+          {(note.tags ?? []).map((tag) => (
             <Badge key={tag}>{tag}</Badge>
           ))}
-          <span className={cn("text-xs text-muted", note.tags.length && "ml-auto")}>
+          <span
+            className={cn(
+              "text-xs text-muted",
+              (note.tags ?? []).length && "ml-auto",
+            )}
+          >
             {formatDate(note.updatedAt)}
           </span>
         </div>

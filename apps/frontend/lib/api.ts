@@ -125,6 +125,7 @@ export const api = {
       apiFetch<AuthResponse>("/auth/refresh", {
         method: "POST",
         skipAuth: true,
+        skipRetry: true,
         credentials: "include",
       }),
 
@@ -174,10 +175,9 @@ export const api = {
       apiFetch<void>(`/notes/${id}`, { method: "DELETE" }),
 
     generateSummary: (id: string) =>
-      apiFetch<{ success: boolean; message: string }>(
-        `/notes/${id}/generate-summary`,
-        { method: "POST" },
-      ),
+      apiFetch<AiStatusResponse>(`/notes/${id}/generate-summary`, {
+        method: "POST",
+      }),
 
     aiStatus: (id: string) =>
       apiFetch<AiStatusResponse>(`/notes/${id}/ai-status`),
